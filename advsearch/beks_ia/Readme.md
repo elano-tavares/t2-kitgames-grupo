@@ -55,12 +55,67 @@ Para o Jogo da Velha Invertido (`tttm_minimax.py`), implementamos a função de 
 ---
 
 ## 3. Agente do Torneio (`tournament_agent.py`)
-* **[Preencher — Stefano]:** Descrever a estratégia final adotada no `tournament_agent.py` (algoritmo base, heurística utilizada, critério de parada/tempo e otimizações aplicadas para respeitar o limite de 5s e 4 GB de RAM sem processos em background ou dados pré-calculados).
+### 3.1. Algoritmo
+O agente do torneio usa **poda alfa-beta com aprofundamento iterativo limitado por tempo**. O arquivo é autocontido: não usa o `minimax.py` nem o `GameState.next_state` do kit, e tem uma simulação própria do tabuleiro (cópia de listas). O `next_state` do kit copia o tabuleiro convertendo-o para texto e de volta, o que é lento e limitaria a profundidade da busca. A geração e a aplicação de jogadas da simulação própria foram validadas contra o kit em 300 partidas aleatórias, com resultados idênticos.
+
+* **Turno repetido:** o tipo do nó (MAX ou MIN) é decidido comparando o jogador da vez com o jogador da raiz, e não por alternância fixa. Se o jogador da vez não tem jogadas, a vez passa ao oponente; se nenhum dos dois tem, o estado é terminal.
+* **Coordenadas:** o tabuleiro é indexado como `tiles[linha][coluna]` e as jogadas são retornadas como `(x, y) = (coluna, linha)`.
+
+### 3.2. Heurística
+A avaliação, feita do ponto de vista do jogador da raiz, combina:
+* **Valor posicional:** a mesma máscara do `othello_minimax_mask.py`, com um ajuste: as casas X e C (vizinhas dos cantos) só são penalizadas enquanto o canto correspondente está vazio; com o canto ocupado, passam a valer `+5`.
+* **Mobilidade:** diferença normalizada entre o número de jogadas legais de cada lado, `100·(m_eu − m_op)/(m_eu + m_op)`.
+* **Cantos:** `30` pontos por canto de vantagem.
+* **Paridade de peças:** diferença normalizada de peças, relevante só no fim do jogo.
+
+Os pesos mudam conforme a fase da partida:
+
+| Fase | Casas vazias | Fórmula |
+| :--- | :---: | :--- |
+| Abertura | > 40 | `1,0·pos + 4,0·mob + 30·cantos` |
+| Meio de jogo | 15–40 | `1,0·pos + 3,0·mob + 30·cantos + 0,5·paridade` |
+| Final | ≤ 14 | `0,5·pos + 1,0·mob + 30·cantos + 3,0·paridade` |
+
+Estados terminais recebem o valor exato `10000 · (peças_eu − peças_op)`, que sempre domina a heurística.
+
+### 3.3. Critério de parada e limites do torneio
+* **Tempo:** o orçamento é de **3,5 s por jogada** (o servidor concede 5 s). A folga compensa a máquina do torneio (Xeon E5-2650, 2,0 GHz), que deve ser mais lenta que a usada nos testes. Como o limite é por tempo, e não por profundidade fixa, numa máquina mais lenta o agente apenas busca menos fundo.
+* **Checagem dentro da busca:** o relógio é verificado em todo nó. Ao estourar o prazo, uma exceção interrompe a busca imediatamente. Isso importa porque o servidor chama o `make_move` numa thread e, num timeout, essa thread continuaria rodando em background; o agente nunca chega a esse ponto.
+* **Iterações:** a busca começa na profundidade 1 e aumenta de 1 em 1. Uma nova profundidade só começa se ainda não se passaram 35% do orçamento, porque cada nível custa várias vezes o anterior. Se o tempo acaba no meio de uma profundidade, o agente usa a melhor jogada da última profundidade completa, ou a jogada da profundidade interrompida que já superou essa com busca completa (cujo valor é exato).
+* **Final exato:** a busca para ao atingir o número de casas vazias. Nos finais com poucas casas vazias, a árvore é percorrida até o fim e a jogada é escolhida pelo resultado real.
+* **Memória:** não há tabela de transposição nem estruturas que cresçam entre jogadas. A recursão tem no máximo cerca de 60 níveis e o pico medido foi de cerca de 40 KB, muito abaixo do limite de 4 GB.
+* **Regras de desclassificação:** o agente não cria threads nem processos, não lê arquivos e não usa jogadas pré-calculadas.
+
+### 3.4. Testes
+Os testes rodaram num notebook com Python 3.14, com o agente jogando alternadamente de pretas e brancas. A versão final foi comparada com a versão anterior do mesmo agente (mesma heurística, sem as otimizações da seção 4):
+
+| Adversário | Partidas | Resultado (V/E/D) | Saldo médio de peças |
+| :--- | :---: | :---: | :---: |
+| `randomplayer` | 4 | 4 / 0 / 0 | +55,0 |
+| Minimax do grupo com a heurística posicional (profundidade 3) | 2 | 2 / 0 / 0 | +59,5 |
+| Versão anterior do agente do torneio | 4 | 4 / 0 / 0 | +28,5 |
+
+* **Tempo por jogada:** máximo de 3,53 s e média de cerca de 2,0 s.
+* **Profundidade média alcançada:** 6, chegando a 11–14 no final do jogo.
+* **Servidor oficial:** numa partida pelo `server.py` com limite de 5 s (`-d 5`), o agente venceu o `randomplayer` por 57 a 7, sem jogadas ilegais nem estouro de tempo, incluindo uma situação de turno repetido.
 
 ---
 
 ## 4. Extras
-* **[Preencher — Stefano / Grupo]:** Relatar melhorias adicionais implementadas (ex.: ordenação de jogadas, aprofundamento iterativo, tabela de transposição ou MCTS opcional em `mcts.py`) e eventuais fontes utilizadas. Caso nenhum extra tenha sido implementado, declarar explicitamente.
+Melhorias de busca implementadas no `tournament_agent.py`:
+* **Aprofundamento iterativo limitado por tempo:** descrito na seção 3.3.
+* **Ordenação de jogadas:** na raiz, as jogadas são reordenadas pelo valor obtido na iteração anterior, de modo que a melhor é explorada primeiro e as podas aumentam. Nos nós internos, a ordem é estática pela máscara posicional: cantos primeiro, casas X e C por último.
+* **Aproveitamento da iteração interrompida:** descrito na seção 3.3.
+* **Otimizações de desempenho:**
+  * teste de legalidade que para na primeira direção válida, sem montar listas;
+  * mapa direto de cada casa X/C para o seu canto;
+  * contagem de peças e valor posicional calculados numa única passada pelo tabuleiro.
+
+  Juntas, essas otimizações deixaram a avaliação cerca de 1,6 vez mais rápida, o que se converte em mais profundidade dentro do mesmo tempo.
+
+**Não implementado:** o MCTS opcional (`mcts.py`) ficou de fora. Em Python puro, o número de simulações possíveis em 5 s seria pequeno, e o grupo optou por concentrar o esforço na poda alfa-beta. A tabela de transposição também não foi implementada.
+
+**Fontes:** a máscara posicional é a fornecida no kit (`EVAL_TEMPLATE`, adaptada de https://web.fe.up.pt/~eol/IA/MIA0203/trabalhos/Damas_Othelo/Docs/Eval.html). Os demais componentes da heurística (mobilidade, cantos, casas X/C e paridade) são conceitos clássicos de estratégia de Othello.
 
 ---
 
