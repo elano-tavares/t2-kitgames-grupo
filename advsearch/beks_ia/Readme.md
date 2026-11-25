@@ -3,7 +3,7 @@
 ## Integrantes
 * Elano Tavares do Nascimento (Cartão: 00588513, Turma: B)
 * Bruna Rosa Bragança de Lima (Cartão: 00588681, Turma: B)
-* Karina [Sobrenome] (Cartão: XXXXXXXX, Turma: X)
+* Karina Ribeiro Martins (Cartão: 590451, Turma: B)
 * Stefano [Sobrenome] (Cartão: XXXXXXXX, Turma: X)
 
 ## Bibliotecas adicionais
@@ -36,15 +36,17 @@ Para o Jogo da Velha Invertido (`tttm_minimax.py`), implementamos a função de 
 * **[Preencher — Bruna]:** Explicar o funcionamento da heurística customizada (`evaluate_custom`), os componentes avaliados (ex.: mobilidade, estabilidade, cantos/quinas, paridade, contagem) e eventuais fontes consultadas (artigos/sites e como foram adaptados).
 
 ### 2.2. Critério de parada
-* **[Preencher — Bruna / Karina]:** Descrever o critério de parada adotado nos agentes de Othello (profundidade máxima fixa ou aprofundamento iterativo limitado por tempo) para respeitar o limite de 5 segundos por jogada na máquina de referência.
+* O critério de parada adotado foi a **profundidade máxima fixa**, com valor **4** nas três heurísticas (contagem, posicional e customizada). Escolhemos profundidade fixa, e não aprofundamento iterativo limitado por tempo, porque, com um prazo em tempo, a heurística mais barata de calcular alcançaria uma profundidade maior e poderia vencer por velocidade, e não por qualidade. Com a mesma profundidade, a diferença de resultado vem da heurística. Além disso, o jogo fica determinístico e reproduzível.
+
+Para escolher o valor, medimos o tempo de `minimax_move` nas profundidades de 2 a 5, em posições de meio de jogo (jogadas 16 a 40), com um script de medição escrito com auxílio de IA. A máquina usada foi um notebook com AMD Ryzen 7 5700U (1,80 GHz), 8 GB de RAM, Windows e Python 3.14.7, na tomada. O pior tempo por jogada foi de 1.71s na profundidade 4 e de 11,35s na profundidade 5, o que a inviabiliza frente ao limite de 5 s. Escolhemos a profundidade 4, cujo pior caso (1,71 s) corresponde a cerca de um terço do limite, o que deixa margem caso a máquina de referência seja mais lenta que a nossa.
 
 ### 2.3. Resultados do Mini-Torneio
 * **[Preencher — Karina]:** Preencher os resultados das 6 partidas obrigatórias (vencedor e placar final de peças):
 
 | Partida (Pretas `B` x Brancas `W`) | Vencedor | Placar Final (`B` x `W`) |
 | :--- | :---: | :---: |
-| Contagem de peças (`B`) x Valor posicional (`W`) | - | - |
-| Valor posicional (`B`) x Contagem de peças (`W`) | - | - |
+| Contagem de peças (`B`) x Valor posicional (`W`) | Valor posicional | 28 x 36 |
+| Valor posicional (`B`) x Contagem de peças (`W`) | Contagem de peças | 22 x 42 |
 | Contagem de peças (`B`) x Heurística customizada (`W`) | - | - |
 | Heurística customizada (`B`) x Contagem de peças (`W`) | - | - |
 | Valor posicional (`B`) x Heurística customizada (`W`) | - | - |
@@ -66,3 +68,4 @@ Para o Jogo da Velha Invertido (`tttm_minimax.py`), implementamos a função de 
 
 ## 5. Declaração de uso de IA (LLMs / Chatbots)
 * **[Preencher — Grupo ao final]:** Declarar explicitamente se o grupo utilizou chatbots ou assistentes baseados em LLMs (como Gemini, ChatGPT, Claude, Copilot), relatando de que forma foram utilizados (ex.: esclarecimento de dúvidas sobre o enunciado, apoio na estruturação de testes e revisão de conceitos de poda alfa-beta/heurísticas, sem geração integral automática do trabalho) e avaliando a experiência de uso.
+Claude: script que roda as partidas do mini-torneio pelo servidor e monta as tabelas de resultado, script de verificação de corretude e de medição de tempo por profundidade.
