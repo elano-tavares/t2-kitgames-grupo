@@ -147,10 +147,6 @@ Melhorias de busca implementadas no `tournament_agent.py`:
 
 O grupo utilizou os assistentes de IA **Claude** e **Gemini** como apoio ao longo do desenvolvimento, principalmente para esclarecer dúvidas sobre o enunciado, revisar conceitos de poda alfa-beta e de estratégia de Othello, e auxiliar no projeto e na calibração das heurísticas. 
 
-
-
-
-
 Não utilizamos os assistentes para gerar automaticamente a solução completa do trabalho!
 A implementação dos algoritmos foi feita pelo grupo.
 
