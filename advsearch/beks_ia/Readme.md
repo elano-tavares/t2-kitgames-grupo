@@ -4,7 +4,7 @@
 * Elano Tavares do Nascimento (Cartão: 00588513, Turma: B)
 * Bruna Rosa Bragança de Lima (Cartão: 00588681, Turma: B)
 * Karina Ribeiro Martins (Cartão: 590451, Turma: B)
-* Stefano [Sobrenome] (Cartão: XXXXXXXX, Turma: X)
+* Stefano Dahmer (Cartão: 590514, Turma: B)
 
 ## Bibliotecas adicionais
 Nenhuma biblioteca adicional além do ambiente padrão (Python 3.12) foi necessária para executar a implementação.
@@ -124,3 +124,5 @@ Melhorias de busca implementadas no `tournament_agent.py`:
 ## 5. Declaração de uso de IA (LLMs / Chatbots)
 * **[Preencher — Grupo ao final]:** Declarar explicitamente se o grupo utilizou chatbots ou assistentes baseados em LLMs (como Gemini, ChatGPT, Claude, Copilot), relatando de que forma foram utilizados (ex.: esclarecimento de dúvidas sobre o enunciado, apoio na estruturação de testes e revisão de conceitos de poda alfa-beta/heurísticas, sem geração integral automática do trabalho) e avaliando a experiência de uso.
 Claude: script que roda as partidas do mini-torneio pelo servidor e monta as tabelas de resultado, script de verificação de corretude e de medição de tempo por profundidade.
+
+Claude (Claude Code), usado por Stefano: o `tournament_agent.py` foi escrito por mim e depois revisado com o Claude, que conferiu as coordenadas, o tratamento de turno repetido e o controle de tempo. O Claude também sugeriu e implementou otimizações de desempenho, que foram aprovadas antes de serem aplicadas: como aproveitar a iteração interrompida e um teste de legalidade mais rápido. Também escreveu os scripts de teste. 
