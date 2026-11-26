@@ -11,7 +11,7 @@ Nenhuma biblioteca adicional além do ambiente padrão (Python 3.12) foi necess�
 
 ---
 
-## 1. Avaliação — Tic-Tac-Toe Misère (Item 2.2a)
+## 1. Avaliação: Tic-Tac-Toe Misère (Item 2.2a)
 
 Para o Jogo da Velha Invertido (`tttm_minimax.py`), implementamos a função de utilidade terminal (`+1.0` para vitória, `0.0` para empate e `-1.0` para derrota) e executamos o algoritmo Minimax com poda alfa-beta (`minimax.py`) com profundidade ilimitada (`max_depth = -1`), explorando completamente a árvore de estados do jogo (profundidade máxima 9). Antes das partidas no servidor, a implementação foi validada nos testes unitários `test_pruning.py` (2/2 testes aprovados) e `test_minimax_tttm.py` (4/4 testes aprovados).
 
@@ -30,10 +30,32 @@ Para o Jogo da Velha Invertido (`tttm_minimax.py`), implementamos a função de 
 
 ---
 
-## 2. Avaliação — Othello (Item 2.2b)
+## 2. Avaliação: Othello (Item 2.2b)
 
 ### 2.1. Heurística customizada (`othello_minimax_custom.py`)
-* **[Preencher — Bruna]:** Explicar o funcionamento da heurística customizada (`evaluate_custom`), os componentes avaliados (ex.: mobilidade, estabilidade, cantos/quinas, paridade, contagem) e eventuais fontes consultadas (artigos/sites e como foram adaptados).
+
+A `evaluate_custom` avalia o estado do ponto de vista do jogador da raiz combinando quatro componentes clássicos da estratégia de Othello, com pesos que mudam conforme a **fase da partida** (medida pelo número de casas vazias). A ideia central é que *contar peças*, como faz a heurística de contagem, é um mau indicador até o fim do jogo (liderar cedo costuma significar peças instáveis e pouca mobilidade), enquanto a heurística posicional, embora melhor, é estática e ignora quantas jogadas cada lado tem. A customizada une os dois e acrescenta mobilidade e paridade dinâmica.
+
+**Componentes (todos do ponto de vista do jogador):**
+
+* **Valor posicional (`pos`):** usa a mesma máscara do `othello_minimax_mask.py` (não alterada), somando o peso das casas ocupadas pelo jogador e subtraindo as do oponente. Com um ajuste importante: as casas **X e C** (vizinhas de um canto), que a máscara penaliza fortemente (`-50`/`-30`), só continuam penalizadas **enquanto o canto correspondente está vazio**, pois ocupar uma casa X/C com o canto aberto convida o oponente a tomar o canto. Quando o canto já está preenchido, essas casas deixam de ser perigosas e passam a valer `+5`. O mapa `XC_CORNER` associa cada casa X/C ao seu canto.
+* **Mobilidade (`mob`):** diferença **normalizada** entre o número de jogadas legais do jogador e do oponente, `100·(m_eu − m_op)/(m_eu + m_op)`. Restringir as opções do adversário costuma forçá-lo a jogar em casas ruins (inclusive entregar cantos).
+* **Cantos (`cantos`):** `30` pontos por canto de vantagem. O canto é a única casa permanentemente estável (nunca pode ser capturada), por isso tem peso alto e independente da fase.
+* **Paridade (`parity`):** diferença normalizada de peças, `100·(peças_eu − peças_op)/(total)`. Recebe peso quase nulo na abertura e **cresce no final**, quando o saldo de peças é o que de fato decide a partida.
+
+**Pesos por fase:**
+
+| Fase | Casas vazias | Fórmula |
+| :--- | :---: | :--- |
+| Abertura | > 40 | `1,0·pos + 4,0·mob + 30·cantos` |
+| Meio de jogo | 15–40 | `1,0·pos + 3,0·mob + 30·cantos + 0,5·paridade` |
+| Final | ≤ 14 | `0,5·pos + 1,0·mob + 30·cantos + 3,0·paridade` |
+
+Estados **terminais** são tratados à parte: retornam o valor exato `10000·(peças_eu − peças_op)`, que sempre domina a avaliação heurística, garantindo que a busca prefira uma vitória/derrota real a qualquer estimativa.
+
+**Validação.** Jogando com profundidade fixa 4 (ver 2.2) e de forma determinística, a heurística customizada venceu as duas básicas nas duas cores: contra a contagem, `55×9` (custom de Pretas) e `55×1` (custom de Brancas); contra a posicional, `52×12` e `62×1`. Também venceu as 4 partidas de teste contra o `randomplayer`, incluindo situações de turno repetido (jogos em que o oponente ficou sem jogadas), tratadas corretamente pelo `minimax.py`. O tempo por jogada em profundidade 4 ficou bem dentro do limite de 5 s (ver as medições na seção 2.2).
+
+**Fontes.** A máscara posicional (`EVAL_TEMPLATE`) é a fornecida no kit, usada como está, adaptada de https://web.fe.up.pt/~eol/IA/MIA0203/trabalhos/Damas_Othelo/Docs/Eval.html. As ideias de avaliação por **contagem de peças** e por **valor posicional** (casas com pesos, cantos valendo muito) correspondem ao tratamento clássico de Othello descrito, por exemplo, no capítulo 18 de *Paradigms of Artificial Intelligence Programming* (Peter Norvig), referência que o próprio kit já cita em `othello/board.py`. Os demais componentes (**mobilidade** normalizada, **controle de cantos**, tratamento das **casas X/C** e **paridade ponderada por fase**) são conceitos consolidados da estratégia de Othello. **A combinação específica, os pesos e a divisão em fases não foram retirados de uma fonte única:** foram montados e calibrados pelo grupo, com apoio de uma ferramenta de IA, na mesma família de avaliação usada pelo agente do torneio (seção 3.2).
 
 ### 2.2. Critério de parada
 * O critério de parada adotado foi a **profundidade máxima fixa**, com valor **4** nas três heurísticas (contagem, posicional e customizada). Escolhemos profundidade fixa, e não aprofundamento iterativo limitado por tempo, porque, com um prazo em tempo, a heurística mais barata de calcular alcançaria uma profundidade maior e poderia vencer por velocidade, e não por qualidade. Com a mesma profundidade, a diferença de resultado vem da heurística. Além disso, o jogo fica determinístico e reproduzível.
@@ -41,18 +63,18 @@ Para o Jogo da Velha Invertido (`tttm_minimax.py`), implementamos a função de 
 Para escolher o valor, medimos o tempo de `minimax_move` nas profundidades de 2 a 5, em posições de meio de jogo (jogadas 16 a 40), com um script de medição escrito com auxílio de IA. A máquina usada foi um notebook com AMD Ryzen 7 5700U (1,80 GHz), 8 GB de RAM, Windows e Python 3.14.7, na tomada. O pior tempo por jogada foi de 1.71s na profundidade 4 e de 11,35s na profundidade 5, o que a inviabiliza frente ao limite de 5 s. Escolhemos a profundidade 4, cujo pior caso (1,71 s) corresponde a cerca de um terço do limite, o que deixa margem caso a máquina de referência seja mais lenta que a nossa.
 
 ### 2.3. Resultados do Mini-Torneio
-* **[Preencher — Karina]:** Preencher os resultados das 6 partidas obrigatórias (vencedor e placar final de peças):
+As 6 partidas obrigatórias foram disputadas com todos os agentes em profundidade fixa 4. Como não há aleatoriedade, os resultados são determinísticos e reproduzíveis. Vencedor e placar final de peças:
 
 | Partida (Pretas `B` x Brancas `W`) | Vencedor | Placar Final (`B` x `W`) |
 | :--- | :---: | :---: |
 | Contagem de peças (`B`) x Valor posicional (`W`) | Valor posicional | 28 x 36 |
 | Valor posicional (`B`) x Contagem de peças (`W`) | Contagem de peças | 22 x 42 |
-| Contagem de peças (`B`) x Heurística customizada (`W`) | - | - |
-| Heurística customizada (`B`) x Contagem de peças (`W`) | - | - |
-| Valor posicional (`B`) x Heurística customizada (`W`) | - | - |
-| Heurística customizada (`B`) x Valor posicional (`W`) | - | - |
+| Contagem de peças (`B`) x Heurística customizada (`W`) | Heurística customizada | 1 x 55 |
+| Heurística customizada (`B`) x Contagem de peças (`W`) | Heurística customizada | 55 x 9 |
+| Valor posicional (`B`) x Heurística customizada (`W`) | Heurística customizada | 1 x 62 |
+| Heurística customizada (`B`) x Valor posicional (`W`) | Heurística customizada | 52 x 12 |
 
-* **Implementação mais bem-sucedida:** [Indicar qual heurística teve mais vitórias e, em caso de empate, maior saldo/captura de peças].
+* **Implementação mais bem-sucedida:** a **heurística customizada**, com **4 vitórias em 4 partidas**, contra 1 vitória da contagem de peças e 1 da posicional. Venceu nas duas cores e por larga margem, somando 224 peças próprias nas suas 4 partidas, contra 80 da contagem e 71 da posicional (cada uma também em 4 partidas). Entre as duas básicas houve empate em vitórias (1 a 1): curiosamente, nas duas partidas entre elas venceu sempre quem jogou de Brancas (segundo a jogar).
 
 ---
 
@@ -122,5 +144,21 @@ Melhorias de busca implementadas no `tournament_agent.py`:
 ---
 
 ## 5. Declaração de uso de IA (LLMs / Chatbots)
-* **[Preencher — Grupo ao final]:** Declarar explicitamente se o grupo utilizou chatbots ou assistentes baseados em LLMs (como Gemini, ChatGPT, Claude, Copilot), relatando de que forma foram utilizados (ex.: esclarecimento de dúvidas sobre o enunciado, apoio na estruturação de testes e revisão de conceitos de poda alfa-beta/heurísticas, sem geração integral automática do trabalho) e avaliando a experiência de uso.
-Claude: script que roda as partidas do mini-torneio pelo servidor e monta as tabelas de resultado, script de verificação de corretude e de medição de tempo por profundidade.
+
+O grupo utilizou os assistentes de IA **Claude** e **Gemini** como apoio ao longo do desenvolvimento, principalmente para esclarecer dúvidas sobre o enunciado, revisar conceitos de poda alfa-beta e de estratégia de Othello, e auxiliar no projeto e na calibração das heurísticas. 
+
+
+
+
+
+Não utilizamos os assistentes para gerar automaticamente a solução completa do trabalho!
+A implementação dos algoritmos foi feita pelo grupo.
+
+* **Avaliação da experiência:** No geral achamos a experiência boa, com a ressalva de que os assistentes ajudaram mais a pensar do que a escrever código pronto. Eles renderam melhor quando já tínhamos uma ideia na cabeça e queríamos confirmar algo ou destravar um ponto específico. Alguns exemplos do que perguntamos ao longo do trabalho:
+  * **Enunciado e kit:** a dúvida que mais apareceu foi o sistema de coordenadas, já que a jogada é `(x, y)` (coluna, linha) mas o tabuleiro é indexado `tiles[linha][coluna]`, e é fácil trocar os dois sem perceber. Também recorremos aos assistentes para entender a regra de passar a vez quando um jogador não tem jogada, que é o que faz o mesmo jogador jogar duas vezes seguidas, e para esclarecer as restrições do torneio (5 segundos, 4 GB, sem threads, arquivos externos ou jogadas pré-calculadas).
+  * **Poda alfa-beta:** ajudou a entender por que o nó MAX ou MIN precisa ser decidido comparando o jogador da vez com o da raiz, em vez de assumir que os jogadores sempre se alternam, que é justamente o caso dos turnos repetidos.
+  * **Tic-tac-toe misère:** confirmamos que a utilidade terminal é invertida e que dá para rodar sem limite de profundidade, porque a árvore do jogo é pequena.
+  * **Heurísticas de Othello:** foi onde mais conversamos. Falamos sobre por que contar peças é um critério fraco (sair na frente cedo costuma ser ruim), como funciona o valor posicional e a máscara, e a ideia de juntar mobilidade, cantos, as casas X/C (que só são ruins enquanto o canto está vazio) e a paridade, que pesa mais no fim do jogo. Os assistentes também entraram na calibração dos pesos e na discussão de como testar se a customizada realmente ganhava das básicas.
+  * **Critério de parada e testes:** discutimos usar profundidade fixa ou aprofundamento iterativo por tempo, e como montar as partidas de teste de forma determinística, jogando tanto de pretas quanto de brancas.
+
+  O lado negativo é que às vezes eles respondem com muita confiança mesmo estando errados. A calibração dos pesos, por exemplo, só ficou confiável depois de jogar as partidas e ver os números, e não apenas pela sugestão do modelo. Também tivemos que ter cuidado com o sistema de coordenadas, que foi uma das maiores fontes de bug e nem sempre o modelo chamava atenção para isso.
