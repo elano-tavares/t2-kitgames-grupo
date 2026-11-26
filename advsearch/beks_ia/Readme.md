@@ -3,8 +3,8 @@
 ## Integrantes
 * Elano Tavares do Nascimento (Cartão: 00588513, Turma: B)
 * Bruna Rosa Bragança de Lima (Cartão: 00588681, Turma: B)
-* Karina Ribeiro Martins (Cartão: 590451, Turma: B)
-* Stefano Dahmer (Cartão: 590514, Turma: B)
+* Karina Ribeiro Martins (Cartão: 00590451, Turma: B)
+* Stefano Dahmer (Cartão: 00590514, Turma: B)
 
 ## Bibliotecas adicionais
 Nenhuma biblioteca adicional além do ambiente padrão (Python 3.12) foi necessária para executar a implementação.
@@ -162,3 +162,4 @@ A implementação dos algoritmos foi feita pelo grupo.
 * **Uso específico por integrante:**
   * Karina — Claude: script que roda as partidas do mini-torneio pelo servidor e monta as tabelas de resultado, script de verificação de corretude e de medição de tempo por profundidade.
   * Stefano — Claude (Claude Code), usado por Stefano: o `tournament_agent.py` foi escrito por mim e depois revisado com o Claude, que conferiu as coordenadas, o tratamento de turno repetido e o controle de tempo. O Claude também sugeriu e implementou otimizações de desempenho, que foram aprovadas antes de serem aplicadas: como aproveitar a iteração interrompida e um teste de legalidade mais rápido. Também escreveu os scripts de teste.
+  * Elano — Gemini: apoio na análise do enunciado e divisão de tarefas do grupo, esclarecimento sobre a interface do `GameState` e o tratamento de turnos repetidos na poda alfa-beta, auxílio na estruturação e revisão do `minimax.py` e do `tttm_minimax.py` frente aos testes unitários (`test_pruning.py` e `test_minimax_tttm.py`), além da execução dos testes no servidor e redação inicial do `Readme.md` (Item 2.2a).
